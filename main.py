@@ -10,7 +10,7 @@ locations = {"House": "5",
 items = ["Bandage","Bat","Crowbar"]
 weapons = {"Bat": 20,
            "Crowbar": 35}
-
+BaseHealth = 100
 
 class Character:
     def __init__(self, name, money, health, damage, accuracy, stamina, knownLocations, items, weapon):
@@ -31,15 +31,17 @@ def chooseActivity():
     return choice
 def chooseLocation():
     num = 1
+
     for i in user.knownLocations:
         selectDict = {num: i}
 
         print("[{}] {}".format(num, i))
         num += 1
+
     choiceNum = int(input("Where would you like to go?\n"))
 
 
-
+    print(selectDict[choiceNum])
     return selectDict[choiceNum]
 
 def foundLocation():
@@ -50,16 +52,19 @@ def foundLocation():
     print("         ",location)
     print("--------------------------")
     return location
-def foundItem():
+def foundRandomItem():
     item = random.choice(list(items))
+    addItem(item)
+def addItem(item):
+    print(f"You found one {item}!")
     if item in user.items.keys():
         if user.items[item] >= 5:
             print("You can only carry 5 {}.".format(item))
             return
         user.items[item] += 1
-        print("Found another {} you now have {}.".format(item, user.items[item]))
     else:
         user.items[item] = 1
+    print("You now have {}.".format(user.items[item]))
 def displayHealth(opponentHealth):
     health = int(opponentHealth)
     print("----------HEALTH----------")
@@ -93,8 +98,10 @@ def useItem():
             user.weapon = None
             delay(1)
         print("Now using the {} for your weapon.\n".format(item))
+        oldDamage = user.damage
         user.weapon = item
         user.damage = weapons[item]
+        print(f"You now have {user.damage} Damage, before you had {oldDamage} Damage")
     else:
         return
 def useBandage():
@@ -105,13 +112,12 @@ def useBandage():
         if user.health > 90:
             bandage = 100 - user.health
             user.health += bandage
+            user.items["Bandage"] = bandageCount
         else:
             user.health += 10
         print("Applying bandage...")
         delay(3)
         print(f"Player now has {user.health} health.\n")
-
-
 def printKnownLocations():
 
     if len(user.knownLocations) == 0:
@@ -131,9 +137,10 @@ def fight():
     print("--------------------------\n\n")
     xpEarned = 0
     lastHitChance = 100
-    while opponentHealth > 0:
+    while opponentHealth > 0 and user.health > 0:
 
-        displayHealth(opponentHealth)
+
+
 
 
         userInput = input("Fight? Use a Bandage or Run? ( F / B / R )\n")
@@ -147,50 +154,60 @@ def fight():
             debugVal(hitChance)
             debugVal(lastHitChance)
 
+
+            # Checks if the last hit chance is below 50, if it is a slight buff is applied.
             if lastHitChance < 50:
                 hitChance += 15
-
+            lastHitChance = hitChance
+            # Executes a hit
             if hitChance > 50:
                 damageDone = random.randint(1,3) + (user.damage / 10)
                 critChance = random.randint(1,100) + ((user.accuracy+user.stamina)/8)
                 if critChance < 15:
-                    damageDone = damageDone * 1.25
+                    damageDone = damageDone * 1.5
                     print("**************************")
                     print("!!!    CRITICAL HIT    !!!")
+                    print("**************************")
                     xpEarned += 2
                 else:
-                    print("!!! Hit !!!")
-
-
+                    print("**************************")
+                    print("!!!        Hit!         !!!")
+                    print("**************************")
 
                 opponentHealth -= damageDone
                 print("--Zombie was hit for {} HP--\n".format(damageDone))
 
                 xpEarned += 2
+                if opponentHealth < 0:
+                    print("**************************")
+                    print("    Zombie was killed")
+                    print("**************************")
+                    addItem("Bandage")
+                    return
+                displayHealth(opponentHealth)
 
             ### add XP EARNED##
 
 
-            lastHitChance = hitChance
-
         elif userInput == "b":
             useBandage()
         else:
-            if random.randint(1, 10) > 4:
+            if random.randint(1, 10) > 3:
                 print("**** Successfully Escaped ****")
                 return
+
         delay(1)
-    print("**************************")
-    print("    Zombie was killed")
-    print("**************************")
+        oHitChance = random.randint(1,100)
 
-
-
-
-
-
-
-
+        # Opponent Hits user
+        if oHitChance > 40:
+            oHitDamage = random.randint(1,7)
+            user.health -= oHitDamage
+            print("<<<<<<<<<<<<<>>>>>>>>>>>>>")
+            print(f"Zombie hit you for {oHitDamage} HP!")
+            print("<<<<<<<<<<<<<>>>>>>>>>>>>>")
+            delay(1)
+            print(f"You now have {user.health} HP")
     print()
 def doActivity(choice):
     activityLoop = True
@@ -206,7 +223,7 @@ def doActivity(choice):
 
 
 
-            if reward > 40:
+            if reward > 35:
 
                 print("Found a location to Forage!")
                 delay(1)
@@ -217,7 +234,7 @@ def doActivity(choice):
                     fight()
                 activityLoop = False
 
-            elif reward < 40:
+            else:
                 print("No luck finding a location to forage...")
                 delay(1)
                 if risk < 5:
@@ -225,6 +242,10 @@ def doActivity(choice):
                 activityLoop = False
         elif choice =="f":
             delay(1)
+            if len(user.knownLocations) == 0:
+                print("No Known Locations to Forage.\n")
+                activityLoop = False
+                return
             location = chooseLocation()
             print("Travelling to the {}".format(location))
             delay(2)
@@ -233,23 +254,25 @@ def doActivity(choice):
                 if risk < 5:
                     fight()
 
-            if reward > 60:
-                foundItem()
-            elif reward < 60:
+            if reward > 50:
+                foundRandomItem()
+            else:
                 print("No luck finding any items here..")
             user.knownLocations.remove(location)
             activityLoop = False
 
 
         elif choice == "r":
+
+
             activityLoop = False
-            pass
+
         else:
             activityLoop = True
             pass
-
 # Sets up the game with name and instructions on how to play.
 def setupGame():
+
     print()
     print("Welcome to\n")
     delay(1)
@@ -284,7 +307,7 @@ def setupGame():
     print("The names is J for Johnny, Knoxville.\n\n")
     print()
     delay(1)
-    print("Here you will start each of your days. You have the choice to complete 3 activities during your daylight hours.")
+    print("Here you will start each of your days. You have the choice to complete 2 activities during your daylight hours.")
     delay(3)
     print("These choices will impact your day to day experience as well as defending the base from zombies at night.")
     delay(3)
@@ -295,7 +318,11 @@ def setupGame():
     print("Get ready!\n\n")
     delay(1)
     return name
+# Skips setup and begins first day with name test.
+def skipSetup():
+    return ("Test")
 name = setupGame()
+# name = skipSetup()
 day = 1
 user = Character(name, 0, 100, 10, 10, 10, [], {"Bandage": 1}, None)
 GameLoop = True
@@ -304,6 +331,10 @@ DayLoop = True
 #choose the activity loop.
 def chooseTwo():
     for i in range(2):
+        if i == 0:
+            print("You have 12 hours to complete 2 activities.")
+        else:
+            print("You have 6 hours to complete 1 activity.")
         choice = chooseActivity()
         doActivity(choice)
 
@@ -317,26 +348,23 @@ def postActivity():
             useItem()
         elif userInput == "l":
             printKnownLocations()
-            
-        else:
+        elif userInput == "c" or "":
             ActivityLoop = False
+        else:
+            print("Unknown Value. Try again\n")
     delay(1)
     print()
 
 
 while GameLoop:
-
     while DayLoop:
 
         print("Day ", day)
         print("--------------------------\n")
-        print("Good Morning, {}".format(user.name))
+        print("Good Morning, {}\n".format(user.name))
         delay(1)
-        print("You have 12 hours to complete 2 activities.")
-        delay(1)
+
         chooseTwo()
-
         postActivity()
-
 
         day += 1
