@@ -1,17 +1,29 @@
 import random
 import time
 
+debug = True
 locations = {"House": "5",
              "Cabin": "2",
              "Two-Story": "6",
              "Department Store": "4",
              "Gas Station": "2",
              "Apartment": "3"}
+
+
 items = ["Bandage","Bat","Crowbar"]
 weapons = {"Bat": 20,
            "Crowbar": 35}
-BaseHealth = 100
-
+class Base:
+    def __init__(self,health,nightDamage):
+        self.health = health
+        self.nightDamage = nightDamage
+    def setHealth(self, newHealth):
+        self.health = newHealth
+class Location:
+    def __init__(self, name, rarity, value):
+        self.name = name
+        self.rarity = rarity
+        self.value = value
 class Character:
     def __init__(self, name, money, health, damage, accuracy, stamina, knownLocations, items, weapon):
         self.name = name
@@ -23,10 +35,17 @@ class Character:
         self.knownLocations = []
         self.items = {}
         self.weapon = weapon
+
+
+
 def delay(d):
     time.sleep(d)
 def chooseActivity():
-    choice = input("Would you like to Scout, Forage, or Repair? S / F / R\n")
+    choice = ""
+    choices = ["s","f","r"]
+    while choice not in choices:
+        choice = input("Would you like to Scout, Forage, or Repair? S / F / R\n").lower()
+
     print()
     return choice
 def chooseLocation():
@@ -80,32 +99,37 @@ def useItem():
         delay(1)
         return
     delay(1)
-    for i in user.items:
-        selectDict = {num: i}
+    for item in user.items:
+        selectDict = {num: item}
 
-        print("[{}] {}".format(num, i))
+        print(f"[{num}] {item} ({user.items[item]})")
         num += 1
 
     choiceNum = int(input("Would you like to use an item?\n"))
+
     item = selectDict[choiceNum]
     delay(1)
     if item == 'Bandage':
         useBandage()
     elif item in weapons:
+        oldDamage = user.damage
         if user.weapon != None:
             print("Now Throwing away your {}.\n".format(user.weapon))
             user.damage -= weapons[user.weapon]
             user.weapon = None
             delay(1)
         print("Now using the {} for your weapon.\n".format(item))
-        oldDamage = user.damage
+
         user.weapon = item
+        user.items[item] -= 1
         user.damage = weapons[item]
         print(f"You now have {user.damage} Damage, before you had {oldDamage} Damage")
     else:
         return
 def useBandage():
     bandageCount = user.items["Bandage"]
+    if user.health == 100:
+        print("You do not need to use a bandage right now...")
     if bandageCount == 0:
         print("No bandages to use.")
     else:
@@ -129,28 +153,57 @@ def printKnownLocations():
     print()
     delay(2)
 def debugVal(value):
-    print("- # debug -# {} #-".format(value))
+    if debug == True:
+        print("- # debug -# {} #-".format(value))
+def simulateFight():
+    opponentHealth = day + 9
+    xpEarned = 0
+    lastHitChance = 100
+    while opponentHealth > 0 and user.health > 0:
+        hitChance = random.randint(1, 100) + user.accuracy
+        oHitChance = random.randint(1, 100)
+        # Checks if the last hit chance is below 50, if it is a slight buff is applied.
+        if lastHitChance < 50:
+            hitChance += 15 * (day/2)
+        lastHitChance = hitChance
+        # Executes a hit
+        if hitChance > 50:
+            damageDone = random.randint(1, 3) + (user.damage / 10)
+            critChance = random.randint(1, 100) + ((user.accuracy + user.stamina) / 8)
+            if critChance < 15:
+                damageDone = damageDone * 1.5
+                xpEarned += 2
+            opponentHealth -= damageDone
+
+            xpEarned += 2
+            if opponentHealth < 0:
+                print("**************************")
+                print("    Zombie was killed")
+                print("**************************")
+                addItem("Bandage")
+                return
+            displayHealth(opponentHealth)
+
+            ### add XP EARNED##
+        if oHitChance > 40:
+            oHitDamage = random.randint(int(day/2),day+6)
+            user.health -= oHitDamage
 def fight():
-    opponentHealth = 10
+
+
+    opponentHealth = day + 9
     print("--------------------------")
     print("***ENCOUNTERED A ZOMBIE***")
     print("--------------------------\n\n")
     xpEarned = 0
     lastHitChance = 100
     while opponentHealth > 0 and user.health > 0:
-
-
-
-
-
         userInput = input("Fight? Use a Bandage or Run? ( F / B / R )\n")
         userInput = userInput.lower().strip()
-
-
-
         if userInput == 'f':
 
             hitChance = random.randint(1,100) + user.accuracy
+
             debugVal(hitChance)
             debugVal(lastHitChance)
 
@@ -201,7 +254,7 @@ def fight():
 
         # Opponent Hits user
         if oHitChance > 40:
-            oHitDamage = random.randint(1,7)
+            oHitDamage = random.randint(int(day/2),day+6)
             user.health -= oHitDamage
             print("<<<<<<<<<<<<<>>>>>>>>>>>>>")
             print(f"Zombie hit you for {oHitDamage} HP!")
@@ -320,13 +373,8 @@ def setupGame():
     return name
 # Skips setup and begins first day with name test.
 def skipSetup():
+
     return ("Test")
-name = setupGame()
-# name = skipSetup()
-day = 1
-user = Character(name, 0, 100, 10, 10, 10, [], {"Bandage": 1}, None)
-GameLoop = True
-DayLoop = True
 
 #choose the activity loop.
 def chooseTwo():
@@ -343,28 +391,62 @@ def postActivity():
     
     ActivityLoop = True
     while ActivityLoop:
-        userInput = input("Would you like to see your items, known locations, or continue? ( i, l, c)\n")
+        userInput = input("Would you like to see your items, known locations, or continue? ( i, l, c)\n").lower()
         if userInput == "i":
             useItem()
         elif userInput == "l":
             printKnownLocations()
         elif userInput == "c" or "":
             ActivityLoop = False
-        else:
-            print("Unknown Value. Try again\n")
     delay(1)
     print()
+def night(day):
+    zombies = day * 2.5
+    oHitChance = random.randint(1, 100)
 
+    if oHitChance > 40:
+        base.nightDamage = random.randint(int(day/2),day+6)
+        base.setHealth(base.health-base.nightDamage)
+
+    if base.health < 0:
+        for i in range(zombies):
+            simulateFight()
+if __name__ == "__main__":
+    if debug == True:
+        name = skipSetup()
+    else:
+        name = setupGame()
+
+    day = 1
+    user = Character(name, 0, 100, 10, 10, 10, [], {"Bandage": 1}, None)
+    if debug == True:
+        addItem("Bat")
+    base = Base(20,0)
+    GameLoop = True
+    DayLoop = True
 
 while GameLoop:
-    while DayLoop:
+    while DayLoop and base.health > 0:
 
         print("Day ", day)
         print("--------------------------\n")
         print("Good Morning, {}\n".format(user.name))
         delay(1)
+        if day > 1:
+            print(f"Base sustained {base.nightDamage} HP during the night hours.")
+        print("Base Health is", base.health, " HP.")
+        delay(1)
 
         chooseTwo()
         postActivity()
+        night(day)
 
         day += 1
+
+
+
+
+
+
+
+
