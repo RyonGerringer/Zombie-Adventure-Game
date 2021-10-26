@@ -94,6 +94,7 @@ def displayHealth(opponentHealth):
     delay(1)
 def useItem():
     num = 1
+    choiceNum = 0
     if not user.items:
         print("You have no items to use.\n")
         delay(1)
@@ -104,10 +105,21 @@ def useItem():
 
         print(f"[{num}] {item} ({user.items[item]})")
         num += 1
+    nums = list(selectDict.keys())
+    print(nums)
+    while choiceNum not in nums:
 
-    choiceNum = int(input("Would you like to use an item?\n"))
+        choiceNum = input("Would you like to use an item?\n")
+        print(choiceNum)
+        print("Press Enter if you do not want to use an item.")
+        if choiceNum == "":
+            return
 
-    item = selectDict[choiceNum]
+
+
+
+
+    item = int(selectDict[choiceNum])
     delay(1)
     if item == 'Bandage':
         useBandage()
@@ -126,6 +138,10 @@ def useItem():
         print(f"You now have {user.damage} Damage, before you had {oldDamage} Damage")
     else:
         return
+    if user.items[item] < 1:
+        user.items.pop(item)
+
+
 def useBandage():
     bandageCount = user.items["Bandage"]
     if user.health == 100:
@@ -180,7 +196,8 @@ def simulateFight():
                 print("**************************")
                 print("    Zombie was killed")
                 print("**************************")
-                addItem("Bandage")
+                if random.randint(1,2) == 2:
+                    addItem("Bandage")
                 return
             displayHealth(opponentHealth)
 
@@ -235,7 +252,9 @@ def fight():
                     print("**************************")
                     print("    Zombie was killed")
                     print("**************************")
-                    addItem("Bandage")
+                    if random.randint(1, 2) == 2:
+                        addItem("Bandage")
+
                     return
                 displayHealth(opponentHealth)
 
@@ -244,6 +263,8 @@ def fight():
 
         elif userInput == "b":
             useBandage()
+        elif userInput == 's':
+            simulateFight()
         else:
             if random.randint(1, 10) > 3:
                 print("**** Successfully Escaped ****")
@@ -251,14 +272,15 @@ def fight():
 
         delay(1)
         oHitChance = random.randint(1,100)
+        if opponentHealth > 1:
 
         # Opponent Hits user
-        if oHitChance > 40:
-            oHitDamage = random.randint(int(day/2),day+6)
-            user.health -= oHitDamage
-            print("<<<<<<<<<<<<<>>>>>>>>>>>>>")
-            print(f"Zombie hit you for {oHitDamage} HP!")
-            print("<<<<<<<<<<<<<>>>>>>>>>>>>>")
+            if oHitChance > 40:
+                oHitDamage = random.randint(int(day/2),day+6)
+                user.health -= oHitDamage
+                print("<<<<<<<<<<<<<>>>>>>>>>>>>>")
+                print(f"Zombie hit you for {oHitDamage} HP!")
+                print("<<<<<<<<<<<<<>>>>>>>>>>>>>")
             delay(1)
             print(f"You now have {user.health} HP")
     print()
