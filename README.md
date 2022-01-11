@@ -1,6 +1,6 @@
 # "Zombi"-Adventure-Game
 Simple command line text based zombie survival game.
-Where you must Forage, Scout and repair your base.
+Where you must Forage, Scout and Repair your base.
 While searching the world for materials to use against zombies that may attack during the day or night.
 Plan your days strategically due to only 12 hours of daylight!
 
