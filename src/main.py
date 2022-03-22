@@ -1,10 +1,10 @@
 import random, math, time
-import character, items, locationsList, activities
+import character, items, locations, activities
 
 # This skips the intro scene and gives the player a bat,
 # although they have to equip it.
 
-debug = False
+debug = True
 
 
 
@@ -31,6 +31,11 @@ def displayHealth(opponentHealth):
     print("--------------------------")
 
     delay(1)
+def printStats():
+    print("\n\n----------STATS----------")
+    print(f"Total Fights: {user.stats.fights}")
+    print(f"Total Trapped Fights: {user.stats.trappedFights}\n\n")
+    input("Press Enter to continue...")
 def printKnownLocations():
     if len(user.knownLocations) == 0:
         print("No known locations.\n")
@@ -40,6 +45,7 @@ def printKnownLocations():
         print(i)
     print()
     delay(2)
+
 def chooseLocation():
     num = 1
 
@@ -184,7 +190,7 @@ def useBandage():
 #-------------------#
 def foundLocation():
 
-    location = random.choice(list(locationsList.locations.keys()))
+    location = random.choice(list(locations.locations.keys()))
     print()
     print("------Location Found------")
     print("         ",location)
@@ -232,8 +238,19 @@ def simulateFight():
         if oHitChance > 40:
             oHitDamage = random.randint(int(day.count / 2), day.count + 6)
             user.health -= oHitDamage
+def trappedFight():
+    user.stats.trappedFights += 1
+    opponentHealth = day.count + 9 + random.randint(-4,4)
+    print("--------------------------")
+    print("***ENCOUNTERED A ZOMBIE***")
+    print("--------------------------\n\n")
+    print("OH NO ! THIS ZOMBIE HAS YOU TRAPPED\nYOU CANNOT RUN.")
+    
+
+    
 def fight():
-    opponentHealth = day.count + 9
+    user.stats.fights += 1
+    opponentHealth = day.count + 9 + random.randint(-4,4)
     print("--------------------------")
     print("***ENCOUNTERED A ZOMBIE***")
     print("--------------------------\n\n")
@@ -328,8 +345,10 @@ def fight():
     print()
 def chooseActivity():
 
-
-    choice = input("Would you like to Scout, Forage, or Repair? S / F / R\n").lower()
+    if day.count == 1:
+        choice = input("\n\nWould you like to Scout, Forage, or Repair? S / F / R\nType S, F or R and press enter\n Hint: Choose scout to begin.\n").lower()
+    else:
+        choice = input("\n\nWould you like to Scout, Forage, or Repair? S / F / R\n").lower()
 
     print()
     return choice
@@ -352,8 +371,11 @@ def doActivity(choice):
             location = foundLocation()
             user.knownLocations.append(location)
             delay(1)
-            if risk < 20:
+            if risk < 5:
+                trappedFight()
+            elif risk < 20 or debug:
                 fight()
+            
 
             return True
 
@@ -401,15 +423,17 @@ def doActivity(choice):
 def chooseTwo():
 
     while day.hour > 0:
+        
         if day.hour == 12:
             print("You have 12 hours to complete 2 activities.")
         else:
             print("You have 6 hours to complete 1 activity.")
-
+        
         choice = chooseActivity()
         activity = doActivity(choice)
         if activity:
             day.setHour(day.hour - 6)
+        
 
 
 
@@ -417,12 +441,14 @@ def chooseTwo():
 def postActivity():
     ActivityLoop = True
     while ActivityLoop:
-        userInput = input("Would you like to see your items, known locations, or continue? ( i, l, c)\n").lower()
+        userInput = input("Would you like to see your items, known locations, see your stats, or press enter to continue? ( i, l, s)\n").lower()
         if userInput == "i":
             useItem()
         elif userInput == "l":
             printKnownLocations()
-        elif userInput == "c" or "":
+        elif userInput == "s":
+            printStats()
+        elif userInput == "":
             ActivityLoop = False
     delay(1)
     print()
@@ -439,9 +465,28 @@ def debugVal(value):
     if debug == True:
         print("- # debug -# {} #-".format(value))
 # Sets up the game with name and instructions on how to play.
+
+
+def printIntro(line):
+    intro = {1:"Welcome to\n",
+            2:"*********************************",
+            3:"*********************************\n",
+            4:"__________            ___.   .__ ",
+            5:"\____    /____   _____\_ |__ |__|",
+            6:"  /     //  _ \ /     \| __ \|  |",
+            7:" /  ___/(  <_> )  Y Y  \ \_\ \  |",
+            8:"/_______ \____/|__|_|  /___  /__|",
+            9:"        \/           \/    \/    \n",
+            10:"*********************************",
+            11:"*********************************\n\n\n\n",}
+    
+    print(intro[line])
 def setupGame():
     if debug:
         skipSetup()
+    
+    
+    
     print()
     print("Welcome to\n")
     delay(1)
@@ -472,30 +517,45 @@ def setupGame():
     name = input("What is your characters name?\nType Here: ")
     delay(1)
     print("Nice to meet you, {}.".format(name))
-    delay(1)
-    print("The names is J for Johnny, Knoxville.\n\n")
-    print()
-    delay(1)
+    delay(2)
+    print("The names is R for Ryon.\n\n")
+    delay(3)
+
+
+    
+    print("--------------------------\n")
+    print("Day 0")
+    print("--------------------------")
+    print("Good Morning, {}\n".format(name))
+    print("\nBase Health is 20  HP.\nYou have 12 hours to complete 2 activities.\nWould you like to Scout, Forage, or Repair? S / F / R\n")
+    print("\nThis is where you will choose how you spend your day, you will start by scouting areas to forage.\n")
+    delay(3)
+    print("Once you start venturing out and being active, the undead will start to attack.\n")
+    delay(3.5)
+    print("At night the undead will begin to attack the base, you better hope you have good materials and stats.\n")
+    input("Press Enter to continue...")
+    delay(.5)
+
+    
     print(
         "Here you will start each of your days. You have the choice to complete 2 activities during your daylight hours.")
     delay(3)
-    print("These choices will impact your day to day experience as well as defending the base from zombies at night.")
+    print("These choices will impact your day to day experience as well as defending the base from zombies at night.\n\n")
     delay(3)
-    print("Try to survive the longest that you can!")
+    print("Try to survive the longest that you can!\n")
     delay(3)
     print("Game starting...")
     delay(3)
     print("Get ready!\n\n")
     delay(1)
-    character.createUser(name)
-    user = character.Character(name, 0, 100, 10, 10, 10, [], {"Bandage": 1}, None)
-
+    input("Press Enter to continue...")
+    user = character.Character(name, 0, 100, 10, 10, 10, [], {"Bandage": 1})
     return user
 
 
 # Skips setup and begins first day with name test.
 def skipSetup():
-    user = character.Character("Test", 0, 100, 10, 10, 10, [], {"Bandage": 3}, None)
+    user = character.Character("Test", 0, 100, 10, 10, 10, [], {"Bandage": 3})
 
     return user
 
@@ -538,8 +598,6 @@ if __name__ == "__main__":
         if debug == True:
                 addItem("Bat")
                 addItem("Bandage")
-                foundLocation()
-                foundLocation()
         base = Base(20, 0)
         GameLoop = True
         DayLoop = True
